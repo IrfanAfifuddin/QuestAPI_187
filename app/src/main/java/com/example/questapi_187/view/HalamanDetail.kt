@@ -74,5 +74,19 @@ fun DetailSiswaScreen(
                     contentDescription = stringResource(R.string.edit_siswa),
                 )
             }
-        }, 
+        }, modifier = modifier
+    ) { innerPadding ->
+        ItemDetailsBody(
+            statusUIDetail = viewModel.statusUIDetail,
+            onDelete = {
+                coroutineScope.launch {
+                    viewModel.hapusSatuSiswa()
+                    navigateBack()
+                }
+            },
+            modifier = Modifier
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+        )
+    }
 }
