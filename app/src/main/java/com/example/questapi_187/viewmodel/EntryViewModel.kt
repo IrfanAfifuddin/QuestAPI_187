@@ -1,60 +1,57 @@
 package com.example.questapi_187.viewmodel
 
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.questapi_187.modeldata.DetailSiswa
 import com.example.questapi_187.modeldata.UIStateSiswa
 import com.example.questapi_187.modeldata.toDataSiswa
-import com.example.questapi_187.modeldata.toDetailSiswa
+import com.example.questapi_187.modeldata.toUiStateSiswa
 import com.example.questapi_187.repositori.RepositoriDataSiswa
+import com.example.questapi_187.uicontroller.route.DestinasiDetail
+import kotlinx.coroutines.launch
 import retrofit2.Response
 
-class EntryViewModel(private val repositoriDataSiswa: RepositoriDataSiswa) :
-    ViewModel() {
 
+class EditViewModel(savedStateHandle: SavedStateHandle, private val repositoryDataSiswa:
+RepositoriDataSiswa
+): ViewModel() {
     var uiStateSiswa by mutableStateOf(UIStateSiswa())
         private set
 
-    /* Fungsi untuk memvalidasi input */
-    private fun validasiInput(
-        uiState: DetailSiswa = uiStateSiswa.detailSiswa
-    ): Boolean {
+    private val idSiswa: Int = checkNotNull(savedStateHandle[DestinasiDetail.itemIdArg])
+    init {
+        viewModelScope.launch {
+            uiStateSiswa = repositoryDataSiswa.getSatuSiswa(idSiswa)
+                .toUiStateSiswa(true)
+        }
+    }
+
+    fun updateUiState(detailSiswa: DetailSiswa) {
+        uiStateSiswa =
+            UIStateSiswa(detailSiswa = detailSiswa, isEntryValid = validasiInput(detailSiswa))
+    }
+
+    private fun validasiInput(uiState: DetailSiswa = uiStateSiswa.detailSiswa ): Boolean {
         return with(uiState) {
             nama.isNotBlank() && alamat.isNotBlank() && telpon.isNotBlank()
         }
     }
 
-    //Fungsi untuk menangani saat ada perubahan pada text input
-    fun updateUiState(detailSiswa: DetailSiswa) {
-        uiStateSiswa =
-            UIStateSiswa(
-                detailSiswa = detailSiswa,
-                isEntryValid = validasiInput(detailSiswa)
-            )
-    }
+    suspend fun editSatuSiswa(){
+        if (validasiInput(uiStateSiswa.detailSiswa)){
+            val call: Response<Void> = repositoryDataSiswa.editSatuSiswa(idSiswa,uiStateSiswa
+                .detailSiswa.toDataSiswa())
 
-    /* Fungsi untuk menyimpan data yang di-entry */
-    suspend fun addSiswa() {
-        if (!validasiInput()) return
-
-        try {
-            val response = repositoriDataSiswa.postDataSiswa(
-                uiStateSiswa.detailSiswa.toDataSiswa()
-            )
-
-            if (response.isSuccessful) {
-                println("✅ Sukses Tambah Data")
-            } else {
-                println("❌ Gagal tambah data: ${response.code()}")
+            if (call.isSuccessful){
+                println("Update Sukses : ${call.message()}")
+            }else{
+                println("Update Error : ${call.errorBody()}")
             }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            println("🔥 ERROR addSiswa: ${e.message}")
         }
     }
-
-
 }
