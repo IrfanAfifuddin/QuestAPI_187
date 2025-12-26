@@ -10,7 +10,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 
 interface ContainerApp {
-    val repositoryDataSiswa: RepositoriDataSiswa
+    val repositoryDataSiswa: RepositoryDataSiswa
 }
 
 class DefaultContainerApp: ContainerApp {
@@ -39,8 +39,8 @@ class DefaultContainerApp: ContainerApp {
         retrofit.create(ServiceApiSiswa::class.java)
     }
 
-    override val repositoryDataSiswa: RepositoriDataSiswa by lazy {
-        jaringanRepositoriDataSiswa(retrofitService)
+    override val repositoryDataSiswa: RepositoryDataSiswa by lazy {
+        jaringanRepositoryDataSiswa(retrofitService)
     }
 }
 
