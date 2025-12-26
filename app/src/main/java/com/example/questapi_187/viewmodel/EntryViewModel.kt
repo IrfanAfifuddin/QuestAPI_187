@@ -1,57 +1,62 @@
 package com.example.questapi_187.viewmodel
 
-
+import android.annotation.SuppressLint
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.questapi_187.modeldata.DetailSiswa
-import com.example.questapi_187.modeldata.UIStateSiswa
-import com.example.questapi_187.modeldata.toDataSiswa
-import com.example.questapi_187.modeldata.toUiStateSiswa
+import com.example.questapi_187.modeldata.DataSiswa
 import com.example.questapi_187.repositori.RepositoriDataSiswa
 import com.example.questapi_187.uicontroller.route.DestinasiDetail
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import retrofit2.Response
+import java.io.IOException
 
+sealed interface StatusUIDetail {
+    data class Success(val satusiswa: DataSiswa) : StatusUIDetail
+    object Error : StatusUIDetail
+    object Loading : StatusUIDetail
+}
 
-class EditViewModel(savedStateHandle: SavedStateHandle, private val repositoryDataSiswa:
+class DetailViewModel(savedStateHandle: SavedStateHandle, private val repositoryDataSiswa:
 RepositoriDataSiswa
 ): ViewModel() {
-    var uiStateSiswa by mutableStateOf(UIStateSiswa())
-        private set
 
     private val idSiswa: Int = checkNotNull(savedStateHandle[DestinasiDetail.itemIdArg])
+    var statusUIDetail:StatusUIDetail by mutableStateOf(StatusUIDetail.Loading)
+        private set
+
     init {
+        getSatuSiswa()
+    }
+
+    fun getSatuSiswa(){
         viewModelScope.launch {
-            uiStateSiswa = repositoryDataSiswa.getSatuSiswa(idSiswa)
-                .toUiStateSiswa(true)
-        }
-    }
-
-    fun updateUiState(detailSiswa: DetailSiswa) {
-        uiStateSiswa =
-            UIStateSiswa(detailSiswa = detailSiswa, isEntryValid = validasiInput(detailSiswa))
-    }
-
-    private fun validasiInput(uiState: DetailSiswa = uiStateSiswa.detailSiswa ): Boolean {
-        return with(uiState) {
-            nama.isNotBlank() && alamat.isNotBlank() && telpon.isNotBlank()
-        }
-    }
-
-    suspend fun editSatuSiswa(){
-        if (validasiInput(uiStateSiswa.detailSiswa)){
-            val call: Response<Void> = repositoryDataSiswa.editSatuSiswa(idSiswa,uiStateSiswa
-                .detailSiswa.toDataSiswa())
-
-            if (call.isSuccessful){
-                println("Update Sukses : ${call.message()}")
-            }else{
-                println("Update Error : ${call.errorBody()}")
+            statusUIDetail = StatusUIDetail.Loading
+            statusUIDetail = try {
+                StatusUIDetail.Success(satusiswa = repositoryDataSiswa.getSatuSiswa(idSiswa))
+            }
+            catch (e: IOException){
+                StatusUIDetail.Error
+            }
+            catch (e: HttpException){
+                StatusUIDetail.Error
             }
         }
+    }
+
+    @SuppressLint("SuspiciousIndentation")
+    suspend fun hapusSatuSiswa() {
+        val resp: Response<Void> = repositoryDataSiswa.hapusSatuSiswa(idSiswa)
+
+        if (resp.isSuccessful){
+            println("Sukses Hapus Data : ${resp.message()}")
+        }else{
+            println("Gagal Hapus Data : ${resp.errorBody()}")
+        }
+
     }
 }
