@@ -90,3 +90,47 @@ fun DetailSiswaScreen(
         )
     }
 }
+
+
+@Composable
+private fun ItemDetailsBody(
+    statusUIDetail: StatusUIDetail,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(dimensionResource(id = R.dimen.padding_medium)),
+        verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))
+    ) {
+        var deleteConfirmationRequired by remember { mutableStateOf(false) }
+        when (statusUIDetail) {
+            is StatusUIDetail.Loading -> LoadingScreen()
+            is StatusUIDetail.Success -> {
+                Column(verticalArrangement = Arrangement.spacedBy(dimensionResource(id = R.dimen.padding_medium))) {
+                    ItemDetails(
+                        siswa = statusUIDetail.satusiswa,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedButton(
+                        onClick = { deleteConfirmationRequired = true },
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.delete))
+                    }
+                    if (deleteConfirmationRequired) {
+                        DeleteConfirmationDialog(
+                            onDeleteConfirm = {
+                                deleteConfirmationRequired = false
+                                onDelete()
+                            },
+                            onDeleteCancel = { deleteConfirmationRequired = false },
+                            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_medium))
+                        )
+                    }
+                }
+            }
+            is StatusUIDetail.Error -> ErrorScreen(retryAction = {})
+        }
+    }
+}
